@@ -209,6 +209,7 @@ fn test_serde_custom_tikv_config() {
         store_io_notify_capacity: 123456,
         future_poll_size: 2,
         hibernate_regions: false,
+        disable_kv_wal: true,
         dev_assert: true,
         apply_yield_duration: ReadableDuration::millis(333),
         perf_level: PerfLevel::Disable,

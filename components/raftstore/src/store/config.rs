@@ -177,6 +177,8 @@ pub struct Config {
     pub dev_assert: bool,
     #[online_config(hidden)]
     pub apply_yield_duration: ReadableDuration,
+    #[config(skip)]
+    pub disable_kv_wal: bool,
 
     #[serde(with = "engine_config::perf_level_serde")]
     #[online_config(skip)]
@@ -296,6 +298,7 @@ impl Default for Config {
             waterfall_metrics: false,
             io_reschedule_concurrent_max_count: 4,
             io_reschedule_hotpot_duration: ReadableDuration::secs(5),
+            disable_kv_wal: false,
 
             // They are preserved for compatibility check.
             region_max_size: ReadableSize(0),
