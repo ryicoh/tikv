@@ -3356,7 +3356,7 @@ dependencies = [
 [[package]]
 name = "raft-engine"
 version = "0.1.0"
-source = "git+https://github.com/tabokie/raft-engine?branch=o-sync#58fd569a69b4429e12f1acfa63dd30726ca94902"
+source = "git+https://github.com/tabokie/raft-engine?branch=o-sync#06efd844d5d83971f7f9d538f4bf0dca1aceacc9"
 dependencies = [
  "byteorder",
  "crc32fast",
