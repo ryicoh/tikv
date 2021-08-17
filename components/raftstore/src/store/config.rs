@@ -177,7 +177,7 @@ pub struct Config {
     pub dev_assert: bool,
     #[online_config(hidden)]
     pub apply_yield_duration: ReadableDuration,
-    #[config(skip)]
+    #[online_config(skip)]
     pub disable_kv_wal: bool,
 
     #[serde(with = "engine_config::perf_level_serde")]

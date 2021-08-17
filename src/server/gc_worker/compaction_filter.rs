@@ -432,6 +432,7 @@ impl WriteCompactionFilter {
         if self.write_batch.count() > DEFAULT_DELETE_BATCH_COUNT || force {
             let mut wopts = WriteOptions::default();
             wopts.set_no_slowdown(true);
+            wopts.set_disable_wal(true);
             if let Err(e) = do_flush(&self.write_batch, &wopts) {
                 let wb = mem::replace(
                     &mut self.write_batch,
