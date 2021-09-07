@@ -1,15 +1,19 @@
 // Copyright 2019 TiKV Project Authors. Licensed under Apache-2.0.
 
 use std::fs;
+use std::io::{Read, Result as IoResult, Seek, SeekFrom, Write};
 use std::path::Path;
+use std::sync::Arc;
 
+use encryption::{DataKeyManager, DecrypterReader, EncrypterWriter};
 use engine_traits::{
     CacheStats, RaftEngine, RaftEngineReadOnly, RaftLogBatch as RaftLogBatchTrait, Result,
 };
+use file_system::{IOOp, IORateLimiter, IOType};
 use kvproto::raft_serverpb::RaftLocalState;
 use raft::eraftpb::Entry;
 use raft_engine::{
-    Command, Error as RaftEngineError, LogBatch, MessageExt, RaftLogEngine as RawRaftEngine,
+    Command, Engine as RawRaftEngine, Error as RaftEngineError, FileBuilder, LogBatch, MessageExt,
 };
 
 pub use raft_engine::{Config as RaftEngineConfig, RecoveryMode};
@@ -25,14 +29,152 @@ impl MessageExt for MessageExtTyped {
     }
 }
 
+struct ManagedReader<R: Seek + Read> {
+    raw: Option<R>,
+    decrypter: Option<DecrypterReader<R>>,
+    rate_limiter: Option<Arc<IORateLimiter>>,
+}
+
+impl<R: Seek + Read> Seek for ManagedReader<R> {
+    fn seek(&mut self, pos: SeekFrom) -> IoResult<u64> {
+        match (&mut self.raw, &mut self.decrypter) {
+            (Some(ref mut reader), None) => reader.seek(pos),
+            (None, Some(ref mut reader)) => reader.seek(pos),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<R: Seek + Read> Read for ManagedReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+        let mut size = buf.len();
+        if let Some(ref mut limiter) = self.rate_limiter {
+            size = limiter.request(IOType::ForegroundRead, IOOp::Read, size);
+        }
+        match (&mut self.raw, &mut self.decrypter) {
+            (Some(ref mut reader), None) => reader.read(&mut buf[..size]),
+            (None, Some(ref mut reader)) => reader.read(&mut buf[..size]),
+            _ => unreachable!(),
+        }
+    }
+}
+
+struct ManagedWriter<W: Seek + Write> {
+    raw: Option<W>,
+    encrypter: Option<EncrypterWriter<W>>,
+    rate_limiter: Option<Arc<IORateLimiter>>,
+}
+
+impl<W: Seek + Write> Seek for ManagedWriter<W> {
+    fn seek(&mut self, pos: SeekFrom) -> IoResult<u64> {
+        match (&mut self.raw, &mut self.encrypter) {
+            (Some(ref mut writer), None) => writer.seek(pos),
+            (None, Some(ref mut writer)) => writer.seek(pos),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<W: Seek + Write> Write for ManagedWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
+        let mut size = buf.len();
+        if let Some(ref mut limiter) = self.rate_limiter {
+            size = limiter.request(IOType::ForegroundWrite, IOOp::Write, size);
+        }
+        match (&mut self.raw, &mut self.encrypter) {
+            (Some(ref mut writer), None) => writer.write(&buf[..size]),
+            (None, Some(ref mut writer)) => writer.write(&buf[..size]),
+            _ => unreachable!(),
+        }
+    }
+
+    fn flush(&mut self) -> IoResult<()> {
+        Ok(())
+    }
+}
+
+struct ManagedFileBuilder {
+    key_manager: Option<Arc<DataKeyManager>>,
+    rate_limiter: Option<Arc<IORateLimiter>>,
+}
+
+impl ManagedFileBuilder {
+    fn new(
+        key_manager: Option<Arc<DataKeyManager>>,
+        rate_limiter: Option<Arc<IORateLimiter>>,
+    ) -> Self {
+        Self {
+            key_manager,
+            rate_limiter,
+        }
+    }
+}
+
+impl FileBuilder for ManagedFileBuilder {
+    type Reader<R: Seek + Read> = ManagedReader<R>;
+    type Writer<W: Seek + Write> = ManagedWriter<W>;
+
+    fn build_reader<R>(
+        &self,
+        path: &Path,
+        reader: R,
+    ) -> std::result::Result<Self::Reader<R>, Box<dyn std::error::Error>>
+    where
+        R: Seek + Read,
+    {
+        if let Some(ref key_manager) = self.key_manager {
+            Ok(ManagedReader {
+                raw: None,
+                decrypter: Some(key_manager.open_file_with_reader(path, reader)?),
+                rate_limiter: self.rate_limiter.clone(),
+            })
+        } else {
+            Ok(ManagedReader {
+                raw: Some(reader),
+                decrypter: None,
+                rate_limiter: self.rate_limiter.clone(),
+            })
+        }
+    }
+
+    fn build_writer<W>(
+        &self,
+        path: &Path,
+        writer: W,
+        create: bool,
+    ) -> std::result::Result<Self::Writer<W>, Box<dyn std::error::Error>>
+    where
+        W: Seek + Write,
+    {
+        if let Some(ref key_manager) = self.key_manager {
+            Ok(ManagedWriter {
+                raw: None,
+                encrypter: Some(key_manager.open_file_with_writer(path, writer, create)?),
+                rate_limiter: self.rate_limiter.clone(),
+            })
+        } else {
+            Ok(ManagedWriter {
+                raw: Some(writer),
+                encrypter: None,
+                rate_limiter: self.rate_limiter.clone(),
+            })
+        }
+    }
+}
+
 #[derive(Clone)]
-pub struct RaftLogEngine(RawRaftEngine<MessageExtTyped>);
+pub struct RaftLogEngine(Arc<RawRaftEngine<MessageExtTyped, ManagedFileBuilder>>);
 
 impl RaftLogEngine {
-    pub fn new(config: RaftEngineConfig) -> Result<Self> {
-        Ok(RaftLogEngine(
-            RawRaftEngine::open(config).map_err(transfer_error)?,
-        ))
+    pub fn new(
+        config: RaftEngineConfig,
+        key_manager: Option<Arc<DataKeyManager>>,
+        rate_limiter: Option<Arc<IORateLimiter>>,
+    ) -> Result<Self> {
+        let file_builder = Arc::new(ManagedFileBuilder::new(key_manager, rate_limiter));
+        Ok(RaftLogEngine(Arc::new(
+            RawRaftEngine::open_with_file_builder(config, file_builder).map_err(transfer_error)?,
+        )))
     }
 
     /// If path is not an empty directory, we say db exists.
@@ -58,14 +200,15 @@ impl RaftLogEngine {
 }
 
 #[derive(Default)]
-pub struct RaftLogBatch(LogBatch<MessageExtTyped>);
+pub struct RaftLogBatch(LogBatch);
 
 const RAFT_LOG_STATE_KEY: &[u8] = b"R";
 
 impl RaftLogBatchTrait for RaftLogBatch {
     fn append(&mut self, raft_group_id: u64, entries: Vec<Entry>) -> Result<()> {
-        self.0.add_entries(raft_group_id, entries);
-        Ok(())
+        self.0
+            .add_entries::<MessageExtTyped>(raft_group_id, entries)
+            .map_err(transfer_error)
     }
 
     fn cut_logs(&mut self, _: u64, _: u64, _: u64) {
@@ -155,7 +298,10 @@ impl RaftEngine for RaftLogEngine {
 
     fn append(&self, raft_group_id: u64, entries: Vec<Entry>) -> Result<usize> {
         let mut batch = Self::LogBatch::default();
-        batch.0.add_entries(raft_group_id, entries);
+        batch
+            .0
+            .add_entries::<MessageExtTyped>(raft_group_id, entries)
+            .map_err(transfer_error)?;
         self.0.write(&mut batch.0, false).map_err(transfer_error)
     }
 

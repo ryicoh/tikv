@@ -320,6 +320,12 @@ impl<W: Write> Write for EncrypterWriter<W> {
     }
 }
 
+impl<W: Seek + Write> Seek for EncrypterWriter<W> {
+    fn seek(&mut self, pos: SeekFrom) -> IoResult<u64> {
+        Ok(0)
+    }
+}
+
 impl EncrypterWriter<File> {
     pub fn sync_all(&self) -> IoResult<()> {
         self.writer.as_ref().unwrap().sync_all()
