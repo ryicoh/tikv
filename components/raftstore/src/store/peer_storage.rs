@@ -164,7 +164,7 @@ impl EntryCache {
         ents.extend_from_slice(second);
     }
 
-    fn append(&mut self, tag: &str, entries: &[Entry]) {
+    fn append(&mut self, tag: &str, entries: Vec<Entry>) {
         if !entries.is_empty() {
             let mut mem_size_change = 0;
             let old_capacity = self.cache.capacity();
@@ -176,7 +176,7 @@ impl EntryCache {
         }
     }
 
-    fn append_impl(&mut self, tag: &str, mut entries: &[Entry]) -> i64 {
+    fn append_impl(&mut self, tag: &str, mut entries: Vec<Entry>) -> i64 {
         let mut mem_size_change = 0;
 
         if let Some(cache_last_index) = self.cache.back().map(|e| e.get_index()) {
@@ -205,11 +205,8 @@ impl EntryCache {
             }
         }
 
-        let (cache_len, mut entries_len) = (self.cache.len(), entries.len());
-        if entries_len > MAX_CACHE_CAPACITY {
-            entries = &entries[(entries_len - MAX_CACHE_CAPACITY)..];
-            entries_len = entries.len();
-        }
+        let cache_len = self.cache.len();
+        let entries_len = std::cmp::min(entries.len(), MAX_CACHE_CAPACITY);
 
         if cache_len + entries_len > MAX_CACHE_CAPACITY {
             let offset = cache_len + entries_len - MAX_CACHE_CAPACITY - 1;
@@ -217,8 +214,8 @@ impl EntryCache {
             self.compact_to(compact_to);
         }
 
-        for e in entries {
-            self.cache.push_back(e.to_owned());
+        for e in entries.drain(entries.len() - entries_len..) {
+            self.cache.push_back(e);
             mem_size_change += (bytes_capacity(&e.data) + bytes_capacity(&e.context)) as i64;
         }
 
@@ -1144,12 +1141,12 @@ where
             (e.get_index(), e.get_term())
         };
 
+        ready_ctx.raft_wb_mut().append(region_id, &entries)?;
+
         // WARNING: This code is correct based on the assumption that
         // if this function returns error, the TiKV will panic soon,
         // otherwise, the entry cache may be wrong and break correctness.
-        self.cache.append(&self.tag, &entries);
-
-        ready_ctx.raft_wb_mut().append(region_id, entries)?;
+        self.cache.append(&self.tag, entries);
 
         // Delete any previously appended log entries which never committed.
         // TODO: Wrap it as an engine::Error.
@@ -2511,12 +2508,12 @@ mod tests {
 
         cache.append(
             "",
-            &[new_padded_entry(101, 1, 1), new_padded_entry(102, 1, 2)],
+            vec![new_padded_entry(101, 1, 1), new_padded_entry(102, 1, 2)],
         );
         assert_eq!(rx.try_recv().unwrap(), 3);
 
         // Test size change for one overlapped entry.
-        cache.append("", &[new_padded_entry(102, 2, 3)]);
+        cache.append("", vec![new_padded_entry(102, 2, 3)]);
         assert_eq!(rx.try_recv().unwrap(), 1);
 
         // Test size change for all overlapped entries.

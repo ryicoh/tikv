@@ -31,7 +31,7 @@ pub struct RaftLogEngine(RawRaftEngine<MessageExtTyped>);
 impl RaftLogEngine {
     pub fn new(config: RaftEngineConfig) -> Result<Self> {
         Ok(RaftLogEngine(
-            RawRaftEngine::open(config).map_err(transfer_error)?,
+            RawRaftEngine::open(config, None /*file_system*/).map_err(transfer_error)?,
         ))
     }
 
@@ -58,14 +58,13 @@ impl RaftLogEngine {
 }
 
 #[derive(Default)]
-pub struct RaftLogBatch(LogBatch<MessageExtTyped>);
+pub struct RaftLogBatch(LogBatch);
 
 const RAFT_LOG_STATE_KEY: &[u8] = b"R";
 
 impl RaftLogBatchTrait for RaftLogBatch {
-    fn append(&mut self, raft_group_id: u64, entries: Vec<Entry>) -> Result<()> {
-        self.0.add_entries(raft_group_id, entries);
-        Ok(())
+    fn append(&mut self, raft_group_id: u64, entries: &[Entry]) -> Result<()> {
+        self.0.add_entries::<MessageExtTyped>(raft_group_id, entries).map_err(transfer_error)
     }
 
     fn cut_logs(&mut self, _: u64, _: u64, _: u64) {
@@ -153,9 +152,9 @@ impl RaftEngine for RaftLogEngine {
         Ok(())
     }
 
-    fn append(&self, raft_group_id: u64, entries: Vec<Entry>) -> Result<usize> {
+    fn append(&self, raft_group_id: u64, entries: &[Entry]) -> Result<usize> {
         let mut batch = Self::LogBatch::default();
-        batch.0.add_entries(raft_group_id, entries);
+        batch.0.add_entries::<MessageExtTyped>(raft_group_id, entries).map_err(transfer_error)?;
         self.0.write(&mut batch.0, false).map_err(transfer_error)
     }
 

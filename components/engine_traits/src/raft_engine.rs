@@ -51,7 +51,7 @@ pub trait RaftEngine: RaftEngineReadOnly + Clone + Sync + Send + 'static {
     /// Append some log entries and return written bytes.
     ///
     /// Note: `RaftLocalState` won't be updated in this call.
-    fn append(&self, raft_group_id: u64, entries: Vec<Entry>) -> Result<usize>;
+    fn append(&self, raft_group_id: u64, entries: &[Entry]) -> Result<usize>;
 
     fn put_raft_state(&self, raft_group_id: u64, state: &RaftLocalState) -> Result<()>;
 
@@ -86,7 +86,7 @@ pub trait RaftEngine: RaftEngineReadOnly + Clone + Sync + Send + 'static {
 
 pub trait RaftLogBatch: Send {
     /// Note: `RaftLocalState` won't be updated in this call.
-    fn append(&mut self, raft_group_id: u64, entries: Vec<Entry>) -> Result<()>;
+    fn append(&mut self, raft_group_id: u64, entries: &[Entry]) -> Result<()>;
 
     /// Remove Raft logs in [`from`, `to`) which will be overwritten later.
     fn cut_logs(&mut self, raft_group_id: u64, from: u64, to: u64);

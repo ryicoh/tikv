@@ -223,7 +223,7 @@ where
         }
 
         let entries = std::mem::take(&mut task.entries);
-        self.raft_wb.append(task.region_id, entries).unwrap();
+        self.raft_wb.append(task.region_id, &entries).unwrap();
         if let Some((from, to)) = task.cut_logs {
             self.raft_wb.cut_logs(task.region_id, from, to);
         }

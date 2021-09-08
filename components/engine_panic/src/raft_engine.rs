@@ -61,7 +61,7 @@ impl RaftEngine for PanicEngine {
         panic!()
     }
 
-    fn append(&self, raft_group_id: u64, entries: Vec<Entry>) -> Result<usize> {
+    fn append(&self, raft_group_id: u64, entries: &[Entry]) -> Result<usize> {
         panic!()
     }
 
@@ -99,7 +99,7 @@ impl RaftEngine for PanicEngine {
 }
 
 impl RaftLogBatch for PanicWriteBatch {
-    fn append(&mut self, raft_group_id: u64, entries: Vec<Entry>) -> Result<()> {
+    fn append(&mut self, raft_group_id: u64, entries: &[Entry]) -> Result<()> {
         panic!()
     }
 
