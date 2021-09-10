@@ -207,7 +207,7 @@ const RAFT_LOG_STATE_KEY: &[u8] = b"R";
 impl RaftLogBatchTrait for RaftLogBatch {
     fn append(&mut self, raft_group_id: u64, entries: Vec<Entry>) -> Result<()> {
         self.0
-            .add_entries::<MessageExtTyped>(raft_group_id, entries)
+            .add_entries::<MessageExtTyped>(raft_group_id, &entries)
             .map_err(transfer_error)
     }
 
@@ -300,7 +300,7 @@ impl RaftEngine for RaftLogEngine {
         let mut batch = Self::LogBatch::default();
         batch
             .0
-            .add_entries::<MessageExtTyped>(raft_group_id, entries)
+            .add_entries::<MessageExtTyped>(raft_group_id, &entries)
             .map_err(transfer_error)?;
         self.0.write(&mut batch.0, false).map_err(transfer_error)
     }
