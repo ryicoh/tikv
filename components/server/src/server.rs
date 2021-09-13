@@ -1263,7 +1263,13 @@ impl TiKVServer<RocksEngine> {
         raft_engine.set_shared_block_cache(shared_block_cache);
         let engines = Engines::new(kv_engine, raft_engine);
 
-        check_and_dump_raft_engine(&self.config, &engines.raft, 8);
+        check_and_dump_raft_engine(
+            &self.config,
+            self.encryption_key_manager.clone(),
+            get_io_rate_limiter(),
+            &engines.raft,
+            8,
+        );
 
         let cfg_controller = self.cfg_controller.as_mut().unwrap();
         cfg_controller.register(
