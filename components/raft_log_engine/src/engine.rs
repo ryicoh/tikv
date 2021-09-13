@@ -5,7 +5,7 @@ use std::io::{Read, Result as IoResult, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::Arc;
 
-use encryption::{DataKeyManager, DecrypterReader, EncrypterWriter};
+use encryption::{CrypterReader, CrypterWriter, DataKeyManager};
 use engine_traits::{
     CacheStats, RaftEngine, RaftEngineReadOnly, RaftLogBatch as RaftLogBatchTrait, Result,
 };
@@ -31,7 +31,7 @@ impl MessageExt for MessageExtTyped {
 
 struct ManagedReader<R: Seek + Read> {
     raw: Option<R>,
-    decrypter: Option<DecrypterReader<R>>,
+    decrypter: Option<CrypterReader<R>>,
     rate_limiter: Option<Arc<IORateLimiter>>,
 }
 
@@ -61,7 +61,7 @@ impl<R: Seek + Read> Read for ManagedReader<R> {
 
 struct ManagedWriter<W: Seek + Write> {
     raw: Option<W>,
-    encrypter: Option<EncrypterWriter<W>>,
+    encrypter: Option<CrypterWriter<W>>,
     rate_limiter: Option<Arc<IORateLimiter>>,
 }
 
