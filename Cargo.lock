@@ -3383,7 +3383,7 @@ dependencies = [
 [[package]]
 name = "raft-engine"
 version = "0.1.0"
-source = "git+https://github.com/tikv/raft-engine?branch=master#a21012f921d848eb02e86eb722462f1db9cacd73"
+source = "git+https://github.com/tikv/raft-engine?branch=master#dc20babfa3dfc31a92cfa86c5f9b81ae5f8874da"
 dependencies = [
  "byteorder",
  "crc32fast",
@@ -3392,9 +3392,12 @@ dependencies = [
  "fxhash",
  "hex 0.4.2",
  "lazy_static",
+ "libc 0.2.100",
  "log",
  "lz4-sys",
  "nix 0.18.0",
+ "num-derive",
+ "num-traits",
  "parking_lot",
  "prometheus",
  "prometheus-static-metric",
@@ -3419,7 +3422,9 @@ dependencies = [
 name = "raft_log_engine"
 version = "0.0.1"
 dependencies = [
+ "encryption",
  "engine_traits",
+ "file_system",
  "kvproto",
  "lazy_static",
  "num_cpus",
