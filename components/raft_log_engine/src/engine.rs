@@ -111,16 +111,12 @@ impl ManagedFileBuilder {
 }
 
 impl FileBuilder for ManagedFileBuilder {
-    type Reader<R: Seek + Read> = ManagedReader<R>;
-    type Writer<W: Seek + Write> = ManagedWriter<W>;
+    type Reader<R: Seek + Read + Send> = ManagedReader<R>;
+    type Writer<W: Seek + Write + Send> = ManagedWriter<W>;
 
-    fn build_reader<R>(
-        &self,
-        path: &Path,
-        reader: R,
-    ) -> std::result::Result<Self::Reader<R>, Box<dyn std::error::Error>>
+    fn build_reader<R>(&self, path: &Path, reader: R) -> IoResult<Self::Reader<R>>
     where
-        R: Seek + Read,
+        R: Seek + Read + Send,
     {
         if let Some(ref key_manager) = self.key_manager {
             Ok(ManagedReader {
@@ -137,14 +133,9 @@ impl FileBuilder for ManagedFileBuilder {
         }
     }
 
-    fn build_writer<W>(
-        &self,
-        path: &Path,
-        writer: W,
-        create: bool,
-    ) -> std::result::Result<Self::Writer<W>, Box<dyn std::error::Error>>
+    fn build_writer<W>(&self, path: &Path, writer: W, create: bool) -> IoResult<Self::Writer<W>>
     where
-        W: Seek + Write,
+        W: Seek + Write + Send,
     {
         if let Some(ref key_manager) = self.key_manager {
             Ok(ManagedWriter {
