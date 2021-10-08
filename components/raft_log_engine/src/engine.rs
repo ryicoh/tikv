@@ -154,7 +154,7 @@ impl FileBuilder for ManagedFileBuilder {
 }
 
 #[derive(Clone)]
-pub struct RaftLogEngine(Arc<RawRaftEngine<MessageExtTyped, ManagedFileBuilder>>);
+pub struct RaftLogEngine(Arc<RawRaftEngine<ManagedFileBuilder>>);
 
 impl RaftLogEngine {
     pub fn new(
@@ -234,7 +234,7 @@ impl RaftEngineReadOnly for RaftLogEngine {
 
     fn get_entry(&self, raft_group_id: u64, index: u64) -> Result<Option<Entry>> {
         self.0
-            .get_entry(raft_group_id, index)
+            .get_entry::<MessageExtTyped>(raft_group_id, index)
             .map_err(transfer_error)
     }
 
@@ -247,7 +247,7 @@ impl RaftEngineReadOnly for RaftLogEngine {
         to: &mut Vec<Entry>,
     ) -> Result<usize> {
         self.0
-            .fetch_entries_to(raft_group_id, begin, end, max_size, to)
+            .fetch_entries_to::<MessageExtTyped>(raft_group_id, begin, end, max_size, to)
             .map_err(transfer_error)
     }
 }
