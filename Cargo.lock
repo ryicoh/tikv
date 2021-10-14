@@ -237,7 +237,7 @@ dependencies = [
  "log_wrappers",
  "online_config",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "raft",
  "raftstore",
  "rand 0.8.3",
@@ -272,7 +272,7 @@ dependencies = [
  "derive_more",
  "file_system",
  "lazy_static",
- "prometheus",
+ "prometheus 0.12.0",
  "serde",
  "serde_derive",
  "slog",
@@ -484,7 +484,7 @@ dependencies = [
  "online_config",
  "panic_hook",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "prost",
  "protobuf",
@@ -1058,7 +1058,7 @@ dependencies = [
  "matches",
  "online_config",
  "openssl",
- "prometheus",
+ "prometheus 0.12.0",
  "protobuf",
  "rand 0.8.3",
  "serde",
@@ -1122,7 +1122,7 @@ dependencies = [
  "log_wrappers",
  "num_cpus",
  "online_config",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "protobuf",
  "raft",
@@ -1233,7 +1233,7 @@ dependencies = [
  "lazy_static",
  "libloading",
  "matches",
- "prometheus",
+ "prometheus 0.12.0",
  "protobuf",
  "rand 0.8.3",
  "rusoto_core",
@@ -1331,7 +1331,7 @@ dependencies = [
  "online_config",
  "openssl",
  "parking_lot",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "rand 0.8.3",
  "serde",
@@ -2913,7 +2913,7 @@ dependencies = [
  "lazy_static",
  "log",
  "log_wrappers",
- "prometheus",
+ "prometheus 0.12.0",
  "security",
  "semver 0.10.0",
  "serde",
@@ -3242,6 +3242,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "prometheus"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7f64969ffd5dd8f39bd57a68ac53c163a095ed9d0fb707146da1b27025a3504"
+dependencies = [
+ "cfg-if 1.0.0",
+ "fnv",
+ "lazy_static",
+ "libc 0.2.100",
+ "memchr",
+ "parking_lot",
+ "protobuf",
+ "thiserror",
+]
+
+[[package]]
 name = "prometheus-static-metric"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3385,7 +3401,7 @@ dependencies = [
 [[package]]
 name = "raft-engine"
 version = "0.1.0"
-source = "git+https://github.com/tikv/raft-engine?branch=master#8a35f2a8f04dbd3945e3b631c7ba789e78c17259"
+source = "git+https://github.com/tikv/raft-engine?branch=master#f53092ad6415a33cc4e7ca1996390f5a61122759"
 dependencies = [
  "byteorder",
  "crc32fast",
@@ -3402,7 +3418,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "parking_lot",
- "prometheus",
+ "prometheus 0.13.0",
  "prometheus-static-metric",
  "protobuf",
  "rayon",
@@ -3482,7 +3498,7 @@ dependencies = [
  "ordered-float 2.7.0",
  "panic_hook",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "prost",
  "protobuf",
@@ -3804,7 +3820,7 @@ dependencies = [
  "online_config",
  "panic_hook",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "prost",
  "protobuf",
  "raft",
@@ -3840,7 +3856,7 @@ dependencies = [
  "pdqselect",
  "pin-project",
  "procinfo",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "rand 0.8.3",
  "serde",
@@ -4306,7 +4322,7 @@ dependencies = [
  "log_wrappers",
  "nix 0.11.1",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "promptly",
  "protobuf",
  "raft",
@@ -4514,7 +4530,7 @@ dependencies = [
  "kvproto",
  "lazy_static",
  "log_wrappers",
- "prometheus",
+ "prometheus 0.12.0",
  "serde",
  "serde_derive",
  "slog",
@@ -5044,7 +5060,7 @@ dependencies = [
  "kvproto",
  "lazy_static",
  "log_wrappers",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "serde_json",
  "thiserror",
@@ -5220,7 +5236,7 @@ dependencies = [
  "pnet_datalink",
  "pprof",
  "procinfo",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "prost",
  "protobuf",
@@ -5297,7 +5313,7 @@ dependencies = [
  "log_wrappers",
  "nix 0.19.0",
  "pd_client",
- "prometheus",
+ "prometheus 0.12.0",
  "promptly",
  "protobuf",
  "raft",
@@ -5400,7 +5416,7 @@ dependencies = [
  "kvproto",
  "log_wrappers",
  "panic_hook",
- "prometheus",
+ "prometheus 0.12.0",
  "prometheus-static-metric",
  "raftstore",
  "slog",
@@ -5448,7 +5464,7 @@ dependencies = [
  "panic_hook",
  "procfs",
  "procinfo",
- "prometheus",
+ "prometheus 0.12.0",
  "protobuf",
  "rand 0.8.3",
  "regex",
@@ -6051,7 +6067,7 @@ dependencies = [
  "lazy_static",
  "num_cpus",
  "parking_lot_core",
- "prometheus",
+ "prometheus 0.12.0",
  "rand 0.8.3",
 ]
 
