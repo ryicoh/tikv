@@ -1369,7 +1369,7 @@ pub struct RaftEngineConfig {
 
 impl RaftEngineConfig {
     fn validate(&mut self) -> Result<(), Box<dyn Error>> {
-        self.config.validate().map_err(Box::new)?;
+        self.config.sanitize().map_err(Box::new)?;
         Ok(())
     }
 
