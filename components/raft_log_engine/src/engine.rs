@@ -220,8 +220,8 @@ impl RaftLogBatchTrait for RaftLogBatch {
         self.0.is_empty()
     }
 
-    fn merge(&mut self, src: Self) {
-        self.0.merge(src.0);
+    fn merge(&mut self, mut src: Self) {
+        self.0.merge(&mut src.0);
     }
 }
 
