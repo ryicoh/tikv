@@ -336,8 +336,8 @@ impl RaftEngine for RaftLogEngine {
 
 fn transfer_error(e: RaftEngineError) -> engine_traits::Error {
     match e {
-        RaftEngineError::StorageCompacted => engine_traits::Error::EntriesCompacted,
-        RaftEngineError::StorageUnavailable => engine_traits::Error::EntriesUnavailable,
+        RaftEngineError::EntryCompacted => engine_traits::Error::EntriesCompacted,
+        RaftEngineError::EntryNotFound => engine_traits::Error::EntriesUnavailable,
         e => {
             let e = box_err!(e);
             engine_traits::Error::Other(e)
