@@ -587,7 +587,7 @@ impl DataKeyManager {
         } else {
             self.get_file(fname)?
         };
-        CrypterWriter::new_encypter(
+        CrypterWriter::new_encrypter(
             writer,
             crypter::encryption_method_from_db_encryption_method(file.method),
             &file.key,
